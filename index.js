@@ -25,6 +25,10 @@ module.exports = {
         "gpp-compiler:gdb": () => {
           debug("gpp-compiler:gdb");
           compileFile(getFileType(), true);
+        },
+        "gpp-compile:make": () => {
+          debug("gpp-compiler:make");
+          make();
         }
       }));
     this.subscriptions.add(atom.
@@ -34,6 +38,9 @@ module.exports = {
         "gpp-compiler:tree-gdb": (e) => {
           debug("gpp-compiler:tree-gdb");
           treeCompile(e, true);
+        },
+        "gpp-compiler:make": () => {
+          make();
         }
       }));
   },
@@ -205,6 +212,98 @@ function getCompiledPath(dir, base) {
   }
 }
 
+function getLinuxTerminalCommand() {
+  const terminal = atom.
+    config.
+    get("gpp-compiler.linuxTerminal");
+
+  let terminalCommand = null;
+  let args = null;
+
+  switch (terminal) {
+    case "GNOME Terminal":
+      terminalCommand = "gnome-terminal";
+      args = [
+        "--command"
+      ];
+
+      break;
+    case "Konsole":
+      terminalCommand = "konsole";
+      args = [
+        "--hold",
+        "-e"
+      ];
+
+      break;
+    case "xfce4-terminal":
+      terminalCommand = "xfce4-terminal";
+      args = [
+        "--hold",
+        "--command"
+      ];
+
+      break;
+    case "pantheon-terminal":
+      terminalCommand = "pantheon-terminal";
+      args = [
+        "-e"
+      ];
+
+      break;
+    case "URxvt":
+      terminalCommand = "urxvt";
+      args = [
+        "-hold",
+        "-e"
+      ];
+
+      break;
+    case "MATE Terminal":
+      terminalCommand = "mate-terminal";
+      args = [
+        "--command"
+      ];
+
+      break;
+    case "Termite":
+      terminalCommand = "termite";
+      args = [
+        "--hold",
+        "-e"
+      ];
+      break;
+    default:
+      terminalCommand = "xterm";
+      args = [
+        "-hold",
+        "-e"
+      ];
+  }
+
+  return {
+    command: terminalCommand,
+    args
+  };
+}
+
+function make() {
+  debug("make()");
+
+  const commandObj = getLinuxTerminalCommand();
+
+  child_process.exec(
+    [
+      commandObj.command,
+      ...commandObj.args,
+      "'",
+      "make",
+      "-C",
+      path.parse(getFilePath().path).dir,
+      "'"
+    ].join(" "));
+}
+
 function compileFile(fileType, gdb) {
   debug("compileFile()", fileType, gdb);
 
@@ -317,75 +416,10 @@ function compile(command, info, args, gdb) {
         if (process.platform === "linux") {
           // if the platform is linux, spawn the program in the user set
           // terminal
-          const terminal = atom.
-            config.
-            get("gpp-compiler.linuxTerminal");
           const file = getCompiledPath(info.dir, info.name);
+          const terminalObj = getLinuxTerminalCommand();
 
-          let terminalCommand = null;
-          let args = null;
-
-          switch (terminal) {
-            case "GNOME Terminal":
-              terminalCommand = "gnome-terminal";
-              args = [
-                "--command"
-              ];
-
-              break;
-            case "Konsole":
-              terminalCommand = "konsole";
-              args = [
-                "--hold",
-                "-e"
-              ];
-
-              break;
-            case "xfce4-terminal":
-              terminalCommand = "xfce4-terminal";
-              args = [
-                "--hold",
-                "--command"
-              ];
-
-              break;
-            case "pantheon-terminal":
-              terminalCommand = "pantheon-terminal";
-              args = [
-                "-e"
-              ];
-
-              break;
-            case "URxvt":
-              terminalCommand = "urxvt";
-              args = [
-                "-hold",
-                "-e"
-              ];
-
-              break;
-            case "MATE Terminal":
-              terminalCommand = "mate-terminal";
-              args = [
-                "--command"
-              ];
-
-              break;
-            case "Termite":
-              terminalCommand = "termite";
-              args = [
-                "--hold",
-                "-e"
-              ];
-              break;
-            default:
-              terminalCommand = "xterm";
-              args = [
-                "-hold",
-                "-e"
-              ];
-          }
-          command = buildFullTerminalCommand(terminalCommand, args, file, gdb);
+          command = buildFullTerminalCommand(terminalObj.command, terminalObj.args, file, gdb);
           debug("command", command);
           child_process.exec(
             command,
