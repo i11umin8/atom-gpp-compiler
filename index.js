@@ -111,7 +111,8 @@ if (process.platform === "linux") {
         "xfce4-terminal",
         "pantheon-terminal",
         "URxvt",
-        "MATE Terminal"
+        "MATE Terminal",
+        "Termite"
       ],
       title: "Linux terminal",
       type: "string"
@@ -335,9 +336,7 @@ function compile(command, info, args, gdb) {
             case "Konsole":
               terminalCommand = "konsole";
               args = [
-                ...(gdb ? [] : [
-                  "--hold"
-                ]),
+                "--hold",
                 "-e"
               ];
 
@@ -345,9 +344,7 @@ function compile(command, info, args, gdb) {
             case "xfce4-terminal":
               terminalCommand = "xfce4-terminal";
               args = [
-                ...(gdb ? [] : [
-                  "--hold"
-                ]),
+                "--hold",
                 "--command"
               ];
 
@@ -362,9 +359,7 @@ function compile(command, info, args, gdb) {
             case "URxvt":
               terminalCommand = "urxvt";
               args = [
-                ...(gdb ? [] : [
-                  "-hold"
-                ]),
+                "-hold",
                 "-e"
               ];
 
@@ -376,25 +371,25 @@ function compile(command, info, args, gdb) {
               ];
 
               break;
+            case "Termite":
+              terminalCommand = "termite";
+              args = [
+                "--hold",
+                "-e"
+              ];
+              break;
             default:
               terminalCommand = "xterm";
               args = [
-                ...(gdb ? [] : [
-                  "-hold"
-                ]),
+                "-hold",
                 "-e"
               ];
           }
-
-          debug("command", terminalCommand, args, gdb, file, options);
-          child_process.spawn(terminalCommand, [
-            ...args,
-            // is there a better one-liner than this?
-            ...(gdb ? [
-              "gdb"
-            ] : []),
-            file
-          ], options);
+          command = buildFullTerminalCommand(terminalCommand, args, file, gdb);
+          debug("command", command);
+          child_process.exec(
+            command,
+            options);
         } else if (process.platform === "win32") {
           // if the platform is Windows, run start (which is a shell builtin, so
           // we can't use child_process.spawn), which spawns a new instance of
@@ -429,4 +424,18 @@ function compile(command, info, args, gdb) {
       });
     }
   });
+
+  function buildFullTerminalCommand(command, args, file, gdb) {
+    // adding quotes to the array makes this work on more terminals. Many
+    // require quotes to make the executed command work properly with args.
+    return [
+      command,
+      // join apparently doesn't recurse, so join the nested array as well.
+      args.join(" "),
+      "'",
+      ...(gdb ? ["gdb"] : []),
+      file,
+      "'"
+    ].join(" ");
+  }
 }
