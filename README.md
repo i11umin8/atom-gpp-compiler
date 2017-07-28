@@ -1,10 +1,14 @@
 # gpp-compiler
 
-This Atom package allows you to compile and run C++ and C within the editor.
+This is a fork of the gpp-compiler package for atom. Issues with certain Linux terminals have been fixed, and this now works with Termite.
+
+This Atom package allows you to compile and run C++ and C within the editor. It also allows you to run a Makefile in the current folder.
 
 To compile C or C++, press <kbd>F5</kbd> or right click the file in tree view and click `Compile and Run`.
 
 To compile C or C++ and attach the GNU Debugger, press <kbd>F6</kbd> or right click the file in tree view and click `Compile and Debug`.
+
+To run the Makefile, press <kbd>F7</kbd> or right click the Makefile and click `Make`.
 
 ## Dependencies
 
